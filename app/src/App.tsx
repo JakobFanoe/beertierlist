@@ -1,37 +1,24 @@
 import React from 'react';
-import { Box, Paper } from '@mui/material';
-import { TierRow, tiers, UploadSection } from './components/Tierlist';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import TierlistPage from './components/Tierlist';
+import Login from './Login';
+import { AuthProvider, useAuth } from './AuthContext';
+const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
 export default function App() {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#221f21",
-        px: 4,
-        py: 8,
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <Box sx={{ width: "100%", maxWidth: 1600 }}>
-        {/* Tier List */}
-        <Paper
-          elevation={0}
-          sx={{
-            overflow: "hidden",
-            bgcolor: "transparent",
-            border: "1px solid #000",
-          }}
-        >
-          {tiers.map((tier) => (
-            <TierRow key={tier.label} tier={tier} />
-          ))}
-        </Paper>
-
-        {/* Upload */}
-        <UploadSection />
-      </Box>
-    </Box>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<RequireAuth><TierlistPage /></RequireAuth>} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

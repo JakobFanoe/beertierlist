@@ -18,7 +18,7 @@ const storage = getStorage(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Sign in anonymously so uploads can be associated with a uid
+// Sign in anonymously as a fallback so uploads can be associated with a uid
 signInAnonymously(auth).catch((e) => console.error('Anonymous sign-in failed', e));
 
 export { app, storage, db, auth };

@@ -9,6 +9,8 @@ import {
   Card,
   CardMedia,
   CardContent,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -119,19 +121,26 @@ export default function TierlistPage() {
     return () => unsub();
   }, []);
 
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
+    setUploading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         await uploadImage(file);
-      } catch (err) {
-        console.error('Upload failed', err);
       }
+    } catch (err: any) {
+      console.error('Upload failed', err);
+      setUploadError(err?.message || String(err));
+    } finally {
+      // clear input
+      e.currentTarget.value = '';
+      setUploading(false);
     }
-    // clear input
-    e.currentTarget.value = '';
   };
 
   const onDragEnd = async (result: DropResult) => {
@@ -202,8 +211,8 @@ export default function TierlistPage() {
               <Typography sx={{ fontSize: 18, color: '#ddd', fontWeight: 700, mb: 2 }}>Upload images</Typography>
 
               <Paper variant="outlined" sx={{ bgcolor: '#1f1c1c', borderColor: '#555', height: 100, px: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Button variant="contained" component="label" startIcon={<UploadFileIcon />} sx={{ bgcolor: '#fff', color: '#000', boxShadow: 'none', '&:hover': { bgcolor: '#eee', boxShadow: 'none' } }}>
-                  Choose files
+                <Button variant="contained" component="label" startIcon={<UploadFileIcon />} disabled={uploading} sx={{ bgcolor: '#fff', color: '#000', boxShadow: 'none', '&:hover': { bgcolor: '#eee', boxShadow: 'none' } }}>
+                  {uploading ? 'Uploading...' : 'Choose files'}
                   <input hidden multiple type="file" onChange={onFileChange} />
                 </Button>
 
@@ -229,6 +238,11 @@ export default function TierlistPage() {
           </DragDropContext>
         </Paper>
       </Box>
+      <Snackbar open={!!uploadError} autoHideDuration={6000} onClose={() => setUploadError(null)}>
+        <Alert severity="error" onClose={() => setUploadError(null)} sx={{ width: '100%' }}>
+          {uploadError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
