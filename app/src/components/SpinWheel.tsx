@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, TextField, Select, MenuItem, Paper, Typography, Stack } from '@mui/material';
+import { Box, Button, TextField, Select, MenuItem, Paper, Typography, Stack, Snackbar, Alert } from '@mui/material';
 import { listenOptionSets, createOptionSet, deleteOptionSet, OptionSet } from '../services/wheelService';
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -25,6 +25,7 @@ export default function SpinWheel() {
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const wheelRef = useRef<SVGSVGElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = listenOptionSets((s) => {
@@ -40,15 +41,25 @@ export default function SpinWheel() {
   const handleCreate = async () => {
     const opts = newOptions.split(',').map((s) => s.trim()).filter(Boolean);
     if (!newName || opts.length === 0) return;
-    await createOptionSet(newName, opts);
-    setNewName('');
-    setNewOptions('');
+    try {
+      await createOptionSet(newName, opts);
+      setNewName('');
+      setNewOptions('');
+    } catch (err: any) {
+      console.error('Create option set failed', err);
+      setError(err?.message || String(err));
+    }
   };
 
   const handleDelete = async (id?: string) => {
     if (!id) return;
-    await deleteOptionSet(id);
-    if (selectedId === id) setSelectedId(null);
+    try {
+      await deleteOptionSet(id);
+      if (selectedId === id) setSelectedId(null);
+    } catch (err: any) {
+      console.error('Delete option set failed', err);
+      setError(err?.message || String(err));
+    }
   };
 
   const spin = () => {
@@ -152,5 +163,8 @@ export default function SpinWheel() {
         </Box>
       </Box>
     </Box>
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
+        <Alert severity="error" onClose={() => setError(null)} sx={{ width: '100%' }}>{error}</Alert>
+      </Snackbar>
   );
 }
