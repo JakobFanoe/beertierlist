@@ -19,6 +19,7 @@ export default function Login() {
     try {
       if (isSignup) await signup(email, password);
       else await login(email, password);
+      navigate('/');
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     } finally {
