@@ -8,7 +8,6 @@ import {
   onSnapshot,
   query,
   orderBy,
-  getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
 import { storage, db, auth } from './firebase';
@@ -20,15 +19,14 @@ export async function uploadImage(file: File) {
   const sRef = storageRef(storage, path);
   await uploadBytes(sRef, file);
   const url = await getDownloadURL(sRef);
-  const docRef = await addDoc(collection(db, 'tierlist_items'), {
+  await addDoc(collection(db, 'tierlist_items'), {
     filename: file.name,
     storagePath: path,
     downloadUrl: url,
+    createdAt: serverTimestamp(),
     tier: null,
     order: null,
-    createdAt: serverTimestamp(),
   });
-  return { id: docRef.id, filename: file.name, downloadUrl: url, tier: null };
 }
 
 export function listenToItems(cb: (items: any[]) => void) {

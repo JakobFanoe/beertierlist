@@ -13,7 +13,8 @@ const AuthShell: React.FC = () => (
   </>
 );
 
-const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+
+const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;

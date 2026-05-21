@@ -1,26 +1,31 @@
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 
-export type OptionSet = {
+export type Option = {
   id?: string;
   name: string;
-  options: string[];
   createdAt?: any;
 };
 
-export function listenOptionSets(cb: (sets: OptionSet[]) => void) {
-  const q = query(collection(db, 'wheel_option_sets'), orderBy('createdAt', 'asc'));
-  return onSnapshot(q, (snap) => {
-    const sets = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-    cb(sets as OptionSet[]);
+export async function getOptions(): Promise<Option[]> {
+  const q = await getDocs(collection(db, 'wheel_options'));
+  const result = q.docs.map((d) => {
+    const data = d.data() as Option;
+    data.id = d.id;
+    return data;
   });
+  return result; 
 }
 
-export async function createOptionSet(name: string, options: string[]) {
-  const ref = await addDoc(collection(db, 'wheel_option_sets'), { name, options, createdAt: serverTimestamp() });
+export async function createOption(name: string) {
+  const ref = await addDoc(collection(db, 'wheel_options'), { name, createdAt: serverTimestamp() });
   return ref.id;
 }
 
-export async function deleteOptionSet(id: string) {
-  await deleteDoc(doc(db, 'wheel_option_sets', id));
+export async function deleteOption(name: string) {
+  const q = query(collection(db, 'wheel_options'), where('name', '==', name));
+  const docs = await getDocs(q);
+  if (!docs.empty) {
+    await deleteDoc(doc(db, 'wheel_options', docs.docs[0].id));
+  }
 }

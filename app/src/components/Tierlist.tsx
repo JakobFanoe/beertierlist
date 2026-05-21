@@ -2,21 +2,15 @@
 import {
   Box,
   Typography,
-  IconButton,
   Button,
   Paper,
-  Stack,
   Card,
   CardMedia,
-  CardContent,
   Snackbar,
   Alert,
 } from '@mui/material';
 
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import SettingsIcon from '@mui/icons-material/Settings';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { uploadImage, listenToItems, updateItemTier } from '../services/tierlistService';
@@ -26,44 +20,26 @@ type Tier = {
   color: string;
 };
 
-export const tiers: Tier[] = [
-  { label: 'S', color: '#e88484' },
-  { label: 'A', color: '#e7b67c' },
-  { label: 'B', color: '#e8d57e' },
-  { label: 'C', color: '#e6e77d' },
-  { label: 'D', color: '#b8e57a' },
-];
-
-export function TierControls() {
-  return (
-    <Box
-      sx={{
-        width: 72,
-        bgcolor: '#000',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 1,
-        borderLeft: '1px solid #111',
-      }}
-    >
-      <IconButton sx={{ color: '#fff' }}>
-        <SettingsIcon sx={{ fontSize: 34 }} />
-      </IconButton>
-
-      <Stack spacing={0}>
-        <IconButton sx={{ color: '#fff', p: 0.5 }}>
-          <KeyboardArrowUpIcon sx={{ fontSize: 34 }} />
-        </IconButton>
-
-        <IconButton sx={{ color: '#fff', p: 0.5 }}>
-          <KeyboardArrowDownIcon sx={{ fontSize: 34 }} />
-        </IconButton>
-      </Stack>
-    </Box>
-  );
+// Deterministic color assignment for tiers
+function getTierColor(label: string): string {
+  // Assign colors based on label, deterministic and consistent
+  const colorMap: Record<string, string> = {
+    S: '#e88484',
+    A: '#e7b67c',
+    B: '#e8d57e',
+    C: '#e6e77d',
+    D: '#b8e57a',
+  };
+  return colorMap[label] || '#cccccc';
 }
+
+export const tiers: Tier[] = [
+  { label: 'S', color: getTierColor('S') },
+  { label: 'A', color: getTierColor('A') },
+  { label: 'B', color: getTierColor('B') },
+  { label: 'C', color: getTierColor('C') },
+  { label: 'D', color: getTierColor('D') },
+];
 
 type Item = {
   id: string;
@@ -75,13 +51,8 @@ type Item = {
 
 function ItemCard({ item }: { item: Item }) {
   return (
-    <Card sx={{ width: 120, mr: 1, mb: 1 }}>
-      <CardMedia component="img" height="80" image={item.downloadUrl} alt={item.filename} />
-      <CardContent sx={{ py: 0.5 }}>
-        <Typography variant="caption" noWrap>
-          {item.filename}
-        </Typography>
-      </CardContent>
+    <Card sx={{ height: 120, width: 120, mr: 1, mb: 1 }}>
+      <CardMedia component="img" width="120" height="120" image={item.downloadUrl} alt={item.filename} />
     </Card>
   );
 }
@@ -93,7 +64,7 @@ export default function TierlistPage() {
     A: [],
     B: [],
     C: [],
-    D: [],
+    D: []
   });
 
   useEffect(() => {
@@ -144,7 +115,7 @@ export default function TierlistPage() {
   };
 
   const onDragEnd = async (result: DropResult) => {
-    const { source, destination, draggableId } = result;
+    const { source, destination } = result;
     if (!destination) return;
     const srcId = source.droppableId;
     const destId = destination.droppableId;
@@ -202,7 +173,6 @@ export default function TierlistPage() {
                   )}
                 </Droppable>
 
-                <TierControls />
               </Box>
             ))}
 
