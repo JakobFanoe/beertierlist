@@ -29,3 +29,11 @@ export async function deleteOption(name: string) {
     await deleteDoc(doc(db, 'wheel_options', docs.docs[0].id));
   }
 }
+
+export async function createManyOptions(names: string[]) {
+  await Promise.all(
+    names.map((name) =>
+      addDoc(collection(db, 'wheel_options'), { name: name.trim(), createdAt: serverTimestamp() })
+    )
+  );
+}
