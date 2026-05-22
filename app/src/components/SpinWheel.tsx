@@ -24,7 +24,7 @@ const COLORS = [
   '#546e7a', '#f4511e', '#7b1fa2', '#00acc1',
 ];
  
-const CANVAS_SIZE = 340;
+const CANVAS_SIZE = Math.min(window.innerWidth * 0.5, 600);
 const RADIUS = CANVAS_SIZE / 2 - 4;
 const CENTER = CANVAS_SIZE / 2;
  
@@ -359,10 +359,9 @@ export default function SpinWheel() {
  
   return (
     <>
-      <Box sx={{ px: 3, py: 3 }}>
+      <Box sx={{ px: 3, py: 3 }} alignSelf="center">
         <Typography variant="h5" fontWeight={500} mb={3}>Spin Wheel</Typography>
- 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
+        <Stack direction="row" spacing={4} alignItems="center" alignContent="center" flexWrap="wrap">
  
           {/* Wheel */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
@@ -398,7 +397,7 @@ export default function SpinWheel() {
           </Box>
  
           {/* Side panel */}
-          <Box sx={{ flex: 1, minWidth: 220, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ flex: 1, minWidth: 420, maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="subtitle1" fontWeight={500}>Names</Typography>
  
             <TextField

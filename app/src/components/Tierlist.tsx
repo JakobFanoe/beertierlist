@@ -1,19 +1,15 @@
-﻿import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Card,
-  CardMedia,
-  Snackbar,
-  Alert,
-} from '@mui/material';
+﻿import React, { useEffect, useRef, useState } from 'react';
+import { Box, Typography, Button, Paper, Card, CardMedia, Snackbar, Alert } from '@mui/material';
 
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { uploadImage, listenToItems, updateItemTier } from '../services/tierlistService';
+import {
+  uploadImage,
+  listenToItems,
+  updateItemTier,
+  updateManyItemTiers,
+} from '../services/tierlistService';
 
 type Tier = {
   label: string;
@@ -49,10 +45,29 @@ type Item = {
   order?: number | null;
 };
 
+// Helper: chunk array into rows of N
+function chunkItems(items: Item[], perRow: number): Item[][] {
+  const rows: Item[][] = [];
+  for (let i = 0; i < items.length; i += perRow) {
+    rows.push(items.slice(i, i + perRow));
+  }
+  if (rows.length === 0) rows.push([]); // always at least one empty row
+  return rows;
+}
+
+const ITEM_SIZE = 128; // px including gap
+const TIER_LABEL_WIDTH = 140;
+
 function ItemCard({ item }: { item: Item }) {
   return (
     <Card sx={{ height: 120, width: 120, mr: 1, mb: 1 }}>
-      <CardMedia component="img" width="120" height="120" image={item.downloadUrl} alt={item.filename} />
+      <CardMedia
+        component="img"
+        width="120"
+        height="120"
+        image={item.downloadUrl}
+        alt={item.filename}
+      />
     </Card>
   );
 }
@@ -64,7 +79,7 @@ export default function TierlistPage() {
     A: [],
     B: [],
     C: [],
-    D: []
+    D: [],
   });
 
   useEffect(() => {
@@ -81,7 +96,13 @@ export default function TierlistPage() {
         return ta.getTime() - tb.getTime();
       });
       items.forEach((it: any) => {
-        const item: Item = { id: it.id, filename: it.filename, downloadUrl: it.downloadUrl, tier: it.tier, order: it.order };
+        const item: Item = {
+          id: it.id,
+          filename: it.filename,
+          downloadUrl: it.downloadUrl,
+          tier: it.tier,
+          order: it.order,
+        };
         if (!item.tier) grouped.tray.push(item);
         else if (grouped[item.tier]) grouped[item.tier].push(item);
         else grouped.tray.push(item);
@@ -96,118 +117,265 @@ export default function TierlistPage() {
   const [uploading, setUploading] = useState(false);
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    setUploading(true);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        await uploadImage(file);
-      }
-    } catch (err: any) {
-      console.error('Upload failed', err);
-      setUploadError(err?.message || String(err));
-    } finally {
-      // clear input
-      e.currentTarget.value = '';
-      setUploading(false);
+  const input = e.currentTarget; // ← capture before any await
+  const files = input.files;
+  if (!files) return;
+  setUploading(true);
+  try {
+    for (let i = 0; i < files.length; i++) {
+      await uploadImage(files[i]);
     }
-  };
+  } catch (err: any) {
+    console.error('Upload failed', err);
+    setUploadError(err?.message || String(err));
+  } finally {
+    input.value = ''; // ← use the captured ref, not e.currentTarget
+    setUploading(false);
+  }
+};
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const getPerRow = () => Math.max(1, Math.floor((containerWidth - TIER_LABEL_WIDTH) / ITEM_SIZE));
 
   const onDragEnd = async (result: DropResult) => {
     const { source, destination } = result;
     if (!destination) return;
-    const srcId = source.droppableId;
-    const destId = destination.droppableId;
-    if (srcId === destId && source.index === destination.index) return;
 
-    const srcList = Array.from(lists[srcId]);
-    const [moved] = srcList.splice(source.index, 1);
-    const destList = Array.from(lists[destId]);
-    destList.splice(destination.index, 0, moved);
+    // Parse "TIER:ROW" ids
+    const parseTierId = (id: string) => {
+      const [tier, row] = id.split(':');
+      return { tier, row: row !== undefined ? parseInt(row) : undefined };
+    };
 
-    const newLists = { ...lists, [srcId]: srcList, [destId]: destList };
-    setLists(newLists);
+    const src = parseTierId(source.droppableId);
+    const dest = parseTierId(destination.droppableId);
 
-    // Persist order for destination list
-    for (let i = 0; i < destList.length; i++) {
-      const it = destList[i];
-      await updateItemTier(it.id, destId === 'tray' ? null : destId, i);
+    const srcTier = src.tier; // e.g. "S" or "tray"
+    const destTier = dest.tier;
+
+    // Rebuild flat list for source tier from its current rows
+    const perRow = getPerRow(); // see below
+    const srcRows = chunkItems(lists[srcTier], perRow);
+    const destRows = srcTier === destTier ? srcRows : chunkItems(lists[destTier], perRow);
+
+    // Find global index
+    const srcGlobalIdx = src.row! * perRow + source.index;
+    const destGlobalIdx = dest.row! * perRow + destination.index;
+
+    const srcFlat = lists[srcTier].slice();
+    const [moved] = srcFlat.splice(srcGlobalIdx, 1);
+
+    let destFlat: Item[];
+    if (srcTier === destTier) {
+      destFlat = srcFlat;
+    } else {
+      destFlat = lists[destTier].slice();
     }
+    destFlat.splice(destGlobalIdx, 0, moved);
 
-    // Update source list order (if different)
-    if (srcId !== destId) {
-      for (let i = 0; i < srcList.length; i++) {
-        const it = srcList[i];
-        await updateItemTier(it.id, srcId === 'tray' ? null : srcId, i);
-      }
-    }
+    setLists({
+      ...lists,
+      [srcTier]: srcTier === destTier ? destFlat : srcFlat,
+      [destTier]: destFlat,
+    });
+
+    const updates = [
+      ...destFlat.map((it, i) => ({
+        id: it.id,
+        tier: destTier === 'tray' ? null : destTier,
+        order: i,
+      })),
+      ...(srcTier !== destTier
+        ? srcFlat.map((it, i) => ({
+            id: it.id,
+            tier: srcTier === 'tray' ? null : srcTier,
+            order: i,
+          }))
+        : []),
+    ];
+    await updateManyItemTiers(updates);
   };
-
-  return (
+   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#221f21', px: 4, py: 8, display: 'flex', justifyContent: 'center' }}>
       <Box sx={{ width: '100%', maxWidth: 1600 }}>
-        <Paper elevation={0} sx={{ overflow: 'hidden', bgcolor: 'transparent', border: '1px solid #000', p: 2 }}>
-          <DragDropContext onDragEnd={onDragEnd}>
-            {/* Tiers */}
-            {tiers.map((tier) => (
-              <Box key={tier.label} sx={{ display: 'flex', height: 140, borderBottom: '1px solid #000', mb: 1 }}>
-                <Box sx={{ width: 140, bgcolor: tier.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Typography sx={{ fontSize: 38, fontWeight: 500, color: '#222', userSelect: 'none' }}>{tier.label}</Typography>
-                </Box>
+        
+        {/* containerRef goes here, on the outer width-measuring box */}
+        <Box ref={containerRef}>
+          <Paper
+            elevation={0}
+            sx={{
+              overflow: 'hidden',
+              bgcolor: 'transparent',
+              border: '1px solid #000',
+              p: 2,
+              display: 'flex',        // ← ADD
+              flexDirection: 'column', // ← ADD: tiers stack vertically
+            }}
+          >
+            <DragDropContext onDragEnd={onDragEnd}>
+              {/* Tiers */}
+              {tiers.map((tier) => {
+                const perRow = getPerRow();
+                const rows = chunkItems(lists[tier.label], perRow);
+                const displayRows = rows.length > 0 ? rows : [[]];
+                if (displayRows[displayRows.length - 1].length >= perRow) {
+                  displayRows.push([]);
+                }
 
-                <Droppable droppableId={tier.label} direction="horizontal">
-                  {(provided) => (
-                    <Box ref={provided.innerRef} {...provided.droppableProps} sx={{ flex: 1, bgcolor: '#11110f', p: 1, display: 'flex', alignItems: 'center', minHeight: 120, overflowX: 'auto' }}>
-                      {lists[tier.label]?.map((it, idx) => (
-                        <Draggable key={it.id} draggableId={it.id} index={idx}>
-                          {(p) => (
-                            <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}>
-                              <ItemCard item={it} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+                return (
+                  <Box
+                    key={tier.label}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row', // ← label + content side by side
+                      borderBottom: '1px solid #000',
+                      mb: 1,
+                    }}
+                  >
+                    {/* Tier label */}
+                    <Box
+                      sx={{
+                        width: TIER_LABEL_WIDTH,
+                        minHeight: 132,
+                        bgcolor: tier.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 38, fontWeight: 500, color: '#222', userSelect: 'none' }}>
+                        {tier.label}
+                      </Typography>
                     </Box>
-                  )}
-                </Droppable>
 
+                    {/* Rows stacked vertically inside the tier */}
+                    <Box sx={{ flex: 1, bgcolor: '#11110f', display: 'flex', flexDirection: 'column' }}>
+                      {displayRows.map((rowItems, rowIdx) => (
+                        <Droppable key={rowIdx} droppableId={`${tier.label}:${rowIdx}`} direction="horizontal">
+                          {(provided) => (
+                            <Box
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'row', // ← items go left to right
+                                alignItems: 'flex-start',
+                                minHeight: 132,
+                                p: '4px',
+                              }}
+                            >
+                              {rowItems.map((it, idx) => (
+                                <Draggable key={it.id} draggableId={it.id} index={idx}>
+                                  {(p) => (
+                                    <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}>
+                                      <ItemCard item={it} />
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </Box>
+                          )}
+                        </Droppable>
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })}
+
+              {/* Upload tray */}
+              <Box sx={{ mt: 4 }}>
+                <Typography sx={{ fontSize: 18, color: '#ddd', fontWeight: 700, mb: 2 }}>
+                  Upload images
+                </Typography>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    bgcolor: '#1f1c1c',
+                    borderColor: '#555',
+                    minHeight: 140,
+                    px: 2,
+                    py: 1,
+                    display: 'flex',
+                    flexDirection: 'column', // ← tray rows also stack vertically
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    component="label"
+                    startIcon={<UploadFileIcon />}
+                    disabled={uploading}
+                    sx={{
+                      alignSelf: 'flex-start',
+                      bgcolor: '#fff',
+                      color: '#000',
+                      boxShadow: 'none',
+                      '&:hover': { bgcolor: '#eee', boxShadow: 'none' },
+                    }}
+                  >
+                    {uploading ? 'Uploading...' : 'Choose files'}
+                    <input hidden multiple type="file" onChange={onFileChange} />
+                  </Button>
+
+                  {/* Tray droppable rows */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {(() => {
+                      const perRow = getPerRow();
+                      const rows = chunkItems(lists.tray, perRow);
+                      const displayRows = rows.length > 0 ? rows : [[]];
+                      if (displayRows[displayRows.length - 1].length >= perRow) displayRows.push([]);
+
+                      return displayRows.map((rowItems, rowIdx) => (
+                        <Droppable key={rowIdx} droppableId={`tray:${rowIdx}`} direction="horizontal">
+                          {(provided) => (
+                            <Box
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'row', // ← horizontal
+                                alignItems: 'flex-start',
+                                minHeight: 132,
+                                p: '4px',
+                              }}
+                            >
+                              {rowItems.map((it, idx) => (
+                                <Draggable key={it.id} draggableId={it.id} index={idx}>
+                                  {(p) => (
+                                    <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}>
+                                      <ItemCard item={it} />
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </Box>
+                          )}
+                        </Droppable>
+                      ));
+                    })()}
+                  </Box>
+                </Paper>
               </Box>
-            ))}
-
-            {/* Upload tray */}
-            <Box sx={{ mt: 4 }}>
-              <Typography sx={{ fontSize: 18, color: '#ddd', fontWeight: 700, mb: 2 }}>Upload images</Typography>
-
-              <Paper variant="outlined" sx={{ bgcolor: '#1f1c1c', borderColor: '#555', height: 100, px: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Button variant="contained" component="label" startIcon={<UploadFileIcon />} disabled={uploading} sx={{ bgcolor: '#fff', color: '#000', boxShadow: 'none', '&:hover': { bgcolor: '#eee', boxShadow: 'none' } }}>
-                  {uploading ? 'Uploading...' : 'Choose files'}
-                  <input hidden multiple type="file" onChange={onFileChange} />
-                </Button>
-
-                <Droppable droppableId="tray" direction="horizontal">
-                  {(provided) => (
-                    <Box ref={provided.innerRef} {...provided.droppableProps} sx={{ display: 'flex', alignItems: 'center', overflowX: 'auto', p: 1 }}>
-                      {lists.tray.map((it, idx) => (
-                        <Draggable key={it.id} draggableId={it.id} index={idx}>
-                          {(p) => (
-                            <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}>
-                              <ItemCard item={it} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable>
-              </Paper>
-            </Box>
-          </DragDropContext>
-        </Paper>
+            </DragDropContext>
+          </Paper>
+        </Box>
       </Box>
+
       <Snackbar open={!!uploadError} autoHideDuration={6000} onClose={() => setUploadError(null)}>
         <Alert severity="error" onClose={() => setUploadError(null)} sx={{ width: '100%' }}>
           {uploadError}

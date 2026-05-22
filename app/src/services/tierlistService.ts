@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { storage, db, auth } from './firebase';
 
@@ -40,4 +41,15 @@ export function listenToItems(cb: (items: any[]) => void) {
 export async function updateItemTier(id: string, tier: string | null, order: number | null) {
   const refDoc = doc(db, 'tierlist_items', id);
   await updateDoc(refDoc, { tier, order });
+}
+
+export async function updateManyItemTiers(
+  updates: { id: string; tier: string | null; order: number }[]
+) {
+  const batch = writeBatch(db);
+  updates.forEach(({ id, tier, order }) => {
+    const refDoc = doc(db, 'tierlist_items', id);
+    batch.update(refDoc, { tier, order });
+  });
+  await batch.commit();
 }
