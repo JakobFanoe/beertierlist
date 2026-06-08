@@ -25,6 +25,7 @@ function getTierColor(label: string): string {
     B: '#e8d57e',
     C: '#e6e77d',
     D: '#b8e57a',
+    E: '#8ce57c',
   };
   return colorMap[label] || '#cccccc';
 }
@@ -35,6 +36,7 @@ export const tiers: Tier[] = [
   { label: 'B', color: getTierColor('B') },
   { label: 'C', color: getTierColor('C') },
   { label: 'D', color: getTierColor('D') },
+  { label: 'E', color: getTierColor('E') },
 ];
 
 type Item = {
@@ -80,12 +82,13 @@ export default function TierlistPage() {
     B: [],
     C: [],
     D: [],
+    E: [],
   });
 
   useEffect(() => {
     // subscribe to firestore
     const unsub = listenToItems((items) => {
-      const grouped: Record<string, Item[]> = { tray: [], S: [], A: [], B: [], C: [], D: [] };
+      const grouped: Record<string, Item[]> = { tray: [], S: [], A: [], B: [], C: [], D: [], E: [] };
       // sort by order if present, otherwise by createdAt
       items.sort((a: any, b: any) => {
         const oa = a.order ?? Number.MAX_SAFE_INTEGER;
