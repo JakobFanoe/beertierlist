@@ -43,7 +43,7 @@ const COLORS = [
   '#00acc1',
 ];
 
-const CANVAS_SIZE = Math.min(window.innerWidth * 0.5, 600);
+const CANVAS_SIZE = Math.min(window.innerWidth * 0.55, 700);
 const RADIUS = CANVAS_SIZE / 2 - 4;
 const CENTER = CANVAS_SIZE / 2;
 
@@ -78,7 +78,7 @@ function drawWheel(ctx: CanvasRenderingContext2D, entries: Option[], rotation: n
     ctx.arc(CENTER, CENTER, RADIUS, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#9e9e9e';
-    ctx.font = '14px sans-serif';
+    ctx.font = '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('Add names →', CENTER, CENTER);
@@ -88,7 +88,7 @@ function drawWheel(ctx: CanvasRenderingContext2D, entries: Option[], rotation: n
 
   const n = entries.length;
   const slice = (Math.PI * 2) / n;
-  const fontSize = n > 12 ? 11 : n > 8 ? 13 : 15;
+  const fontSize = n > 12 ? 13 : n > 8 ? 15 : 17;
 
   for (let i = 0; i < n; i++) {
     const start = rotation + i * slice;
@@ -115,7 +115,7 @@ function drawWheel(ctx: CanvasRenderingContext2D, entries: Option[], rotation: n
     ctx.font = `500 ${fontSize}px sans-serif`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(truncate(entries[i].name, 18), RADIUS - 10, 0);
+    ctx.fillText(truncate(entries[i].name, 20), RADIUS - 12, 0);
     ctx.restore();
   }
 
@@ -125,7 +125,7 @@ function drawWheel(ctx: CanvasRenderingContext2D, entries: Option[], rotation: n
 function drawHub(ctx: CanvasRenderingContext2D): void {
   // Outer ring
   ctx.beginPath();
-  ctx.arc(CENTER, CENTER, 24, 0, Math.PI * 2);
+  ctx.arc(CENTER, CENTER, 28, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,0.12)';
@@ -134,7 +134,7 @@ function drawHub(ctx: CanvasRenderingContext2D): void {
 
   // Inner dot
   ctx.beginPath();
-  ctx.arc(CENTER, CENTER, 9, 0, Math.PI * 2);
+  ctx.arc(CENTER, CENTER, 11, 0, Math.PI * 2);
   ctx.fillStyle = '#bdbdbd';
   ctx.fill();
 }
@@ -147,7 +147,7 @@ const Pointer: React.FC = () => (
   <Box
     sx={{
       position: 'absolute',
-      top: -14,
+      top: -16,
       left: '50%',
       transform: 'translateX(-50%)',
       zIndex: 10,
@@ -155,8 +155,8 @@ const Pointer: React.FC = () => (
       lineHeight: 0,
     }}
   >
-    <svg width="28" height="34" viewBox="0 0 28 34" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="14,34 0,0 28,0" fill="#e53935" />
+    <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="16,40 0,0 32,0" fill="#e53935" />
     </svg>
   </Box>
 );
@@ -269,7 +269,7 @@ export default function SpinWheel() {
   const [currentWinnerColor, setCurrentWinnerColor] = useState<string>('#3369e8');
   const [history, setHistory] = useState<string[]>([]);
 
-  // Textarea for names
+  // Entries
   const [entries, setEntries] = useState<Option[]>([]);
 
   // New option
@@ -277,8 +277,6 @@ export default function SpinWheel() {
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importText, setImportText] = useState('');
-
-  // Options
 
   const fetchOptions = useCallback(async () => {
     try {
@@ -289,7 +287,6 @@ export default function SpinWheel() {
     }
   }, []);
 
-  // Add handler:
   const handleMassImport = useCallback(async () => {
     const names = importText
       .split(',')
@@ -331,7 +328,6 @@ export default function SpinWheel() {
     const slice = (Math.PI * 2) / n;
 
     const fullSpins = 5 + Math.floor(cryptoRandom() * 4);
-    // We want the pointer (at top = -π/2) to land in the middle of targetIdx's segment
     const targetSegmentMid = targetIdx * slice + slice / 2;
     const targetAngle =
       fullSpins * Math.PI * 2 +
@@ -382,7 +378,6 @@ export default function SpinWheel() {
 
   const handleCreateOption = useCallback(async () => {
     if (!newOption) return;
-
     try {
       await createOption(newOption);
       await fetchOptions();
@@ -403,7 +398,6 @@ export default function SpinWheel() {
     [fetchOptions],
   );
 
-  // Remove current winner from list
   const removeWinner = useCallback(() => {
     if (!currentWinner) return;
     angleRef.current = 0;
@@ -413,24 +407,37 @@ export default function SpinWheel() {
 
   return (
     <>
-      <Box sx={{ px: 3, py: 3 }} alignSelf="center">
-        <Typography variant="h5" fontWeight={500} mb={3}>
+      {/* Full-width centered page layout */}
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          px: 3,
+          py: 4,
+        }}
+      >
+        <Typography variant="h5" fontWeight={500} mb={4} alignSelf="flex-start">
           Spin Wheel
         </Typography>
+
+        {/* Main row: wheel center + side panel right */}
         <Stack
           direction="row"
-          spacing={4}
-          alignItems="center"
-          alignContent="center"
+          spacing={5}
+          alignItems="flex-start"
+          justifyContent="center"
+          sx={{ width: '100%', maxWidth: 1100 }}
           flexWrap="wrap"
         >
-          {/* Wheel */}
+          {/* Wheel + Spin button */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 2,
+              gap: 3,
               flexShrink: 0,
             }}
           >
@@ -456,11 +463,12 @@ export default function SpinWheel() {
               onClick={spin}
               sx={{
                 borderRadius: 8,
-                px: 5,
+                px: 6,
+                py: 1.5,
                 bgcolor: '#3369e8',
                 '&:hover': { bgcolor: '#2557d6' },
                 '&:disabled': { bgcolor: '#bdbdbd' },
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: 500,
                 textTransform: 'none',
               }}
@@ -472,12 +480,12 @@ export default function SpinWheel() {
           {/* Side panel */}
           <Box
             sx={{
-              flex: 1,
-              minWidth: 420,
-              maxWidth: 420,
+              width: 340,
+              flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
               gap: 2,
+              pt: 1,
             }}
           >
             <Typography variant="subtitle1" fontWeight={500}>
@@ -485,9 +493,9 @@ export default function SpinWheel() {
             </Typography>
 
             <TextField
-              disabled={true}
+              disabled
               multiline
-              rows={10}
+              rows={12}
               fullWidth
               value={entries.map((e) => e.name).join('\n')}
               inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
@@ -496,9 +504,10 @@ export default function SpinWheel() {
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <TextField
                 fullWidth
-                value={newOption}
+                value={newOption ?? ''}
                 onChange={(e) => setNewOption(e.target.value)}
-                placeholder="Remove or add option"
+                placeholder="Add or remove an option"
+                size="small"
               />
 
               <Stack direction="row" spacing={1}>
@@ -510,101 +519,25 @@ export default function SpinWheel() {
                 >
                   Add
                 </Button>
+                <Button
+                  disabled={!newOption}
+                  variant="outlined"
+                  size="small"
+                  startIcon={<DeleteIcon fontSize="small" />}
+                  onClick={async () => await handleRemoveOption(newOption!)}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Remove
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setImportModalOpen(true)}
+                  sx={{ textTransform: 'none', fontSize: 12 }}
+                >
+                  Import list
+                </Button>
               </Stack>
-              <Button
-                disabled={!newOption}
-                variant="outlined"
-                size="small"
-                startIcon={<DeleteIcon fontSize="small" />}
-                onClick={async () => await handleRemoveOption(newOption!)}
-                sx={{ textTransform: 'none' }}
-              >
-                Remove
-              </Button>
-
-              {/* Mass import button */}
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setImportModalOpen(true)}
-                sx={{ textTransform: 'none', fontSize: 12 }}
-              >
-                Import list
-              </Button>
-              {/* Mass import modal */}
-              <Modal
-                open={importModalOpen}
-                onClose={() => setImportModalOpen(false)}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{ backdrop: { timeout: 250 } }}
-              >
-                <Fade in={importModalOpen}>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      bgcolor: 'background.paper',
-                      borderRadius: 3,
-                      boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
-                      p: 4,
-                      minWidth: 400,
-                      outline: 'none',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2,
-                    }}
-                  >
-                    <Typography variant="h6" fontWeight={500}>
-                      Import options
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Paste a comma-separated list of names. Duplicates are allowed.
-                    </Typography>
-                    <TextField
-                      multiline
-                      rows={4}
-                      fullWidth
-                      autoFocus
-                      placeholder="Alice, Bob, Charlie, Dana"
-                      value={importText}
-                      onChange={(e) => setImportText(e.target.value)}
-                      inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {importText.split(',').filter((s) => s.trim()).length} entries detected
-                    </Typography>
-                    <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          setImportModalOpen(false);
-                          setImportText('');
-                        }}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        disabled={!importText.trim()}
-                        onClick={handleMassImport}
-                        sx={{
-                          bgcolor: '#3369e8',
-                          '&:hover': { bgcolor: '#2557d6' },
-                          textTransform: 'none',
-                        }}
-                      >
-                        Import
-                      </Button>
-                    </Stack>
-                  </Box>
-                </Fade>
-              </Modal>
             </Stack>
 
             {/* History */}
@@ -621,6 +554,81 @@ export default function SpinWheel() {
           </Box>
         </Stack>
       </Box>
+
+      {/* Mass import modal */}
+      <Modal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{ backdrop: { timeout: 250 } }}
+      >
+        <Fade in={importModalOpen}>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              bgcolor: 'background.paper',
+              borderRadius: 3,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+              p: 4,
+              minWidth: 400,
+              outline: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Typography variant="h6" fontWeight={500}>
+              Import options
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Paste a comma-separated list of names. Duplicates are allowed.
+            </Typography>
+            <TextField
+              multiline
+              rows={4}
+              fullWidth
+              autoFocus
+              placeholder="Alice, Bob, Charlie, Dana"
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {importText.split(',').filter((s) => s.trim()).length} entries detected
+            </Typography>
+            <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setImportModalOpen(false);
+                  setImportText('');
+                }}
+                sx={{ textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                disabled={!importText.trim()}
+                onClick={handleMassImport}
+                sx={{
+                  bgcolor: '#3369e8',
+                  '&:hover': { bgcolor: '#2557d6' },
+                  textTransform: 'none',
+                }}
+              >
+                Import
+              </Button>
+            </Stack>
+          </Box>
+        </Fade>
+      </Modal>
 
       {/* Winner modal */}
       <WinnerModal
