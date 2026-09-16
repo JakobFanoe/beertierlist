@@ -10,6 +10,7 @@ import {
   Modal,
   Fade,
   Backdrop,
+  InputAdornment,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -272,6 +273,10 @@ export default function SpinWheel() {
   // Entries
   const [entries, setEntries] = useState<Option[]>([]);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredEntries, setFilteredEntries] = useState<Option[]>(entries);
+
   // New option
   const [newOption, setNewOption] = useState<string | null>(null);
 
@@ -405,6 +410,14 @@ export default function SpinWheel() {
     handleRemoveOption(currentWinner);
   }, [handleRemoveOption, currentWinner]);
 
+  useEffect(() => {
+    const filtered = entries
+      .filter((entry) => entry.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a: Option, b: Option) => a.name.localeCompare(b.name));
+
+    setFilteredEntries(filtered);
+  }, [entries, searchQuery]);
+
   return (
     <>
       {/* Full-width centered page layout */}
@@ -488,16 +501,25 @@ export default function SpinWheel() {
               pt: 1,
             }}
           >
-            <Typography variant="subtitle1" fontWeight={500}>
-              Names
-            </Typography>
-
+            <Stack direction="row" spacing={1} alignItems="center"> 
+               <Typography variant="subtitle1" fontWeight={500}>
+                  Names
+               </Typography>
+                 <TextField
+                    placeholder="Søg..."
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+            </Stack>
+           
             <TextField
               disabled
               multiline
               rows={12}
               fullWidth
-              value={entries.map((e) => e.name).join('\n')}
+              value={filteredEntries.map((e) => e.name).join('\n')}
               inputProps={{ style: { fontFamily: 'monospace', fontSize: 13 } }}
             />
 
