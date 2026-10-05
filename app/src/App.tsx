@@ -1,11 +1,21 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import TierlistPage from './components/Tierlist';
-import Login from './Login';
+import TierlistPage from './components/tierlist/TierlistPage';
+import Login from './components/login/LoginPage';
 import { AuthProvider, useAuth } from './AuthContext';
-import NavBar from './components/NavBar';
-import SpinWheel from './components/SpinWheel';
- 
+import NavBar from './components/shared/NavBar';
+import SpinWheel from './components/spinWheel/SpinWheelPage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const AuthShell: React.FC = () => (
   <>
     <NavBar />
@@ -23,18 +33,20 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route element={<RequireAuth><AuthShell /></RequireAuth>}>
-            <Route path="/" element={<TierlistPage />} />
-            <Route path="/wheel" element={<SpinWheel />} />
-          </Route>
+            <Route element={<RequireAuth><AuthShell /></RequireAuth>}>
+              <Route path="/" element={<TierlistPage />} />
+              <Route path="/wheel" element={<SpinWheel />} />
+            </Route>
 
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

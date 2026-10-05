@@ -1,55 +1,38 @@
-import { v4 as uuidv4 } from 'uuid';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore';
-import { storage, db, auth } from './firebase';
+  TierlistEntry,
+  UpdateTierlistEntriesRequest,
+} from './api/generatedClient';
+import { apiClient } from './api/apiClient';
 
-export async function uploadImage(file: File) {
-  const id = uuidv4();
-  const uid = auth.currentUser?.uid || 'anon';
-  const path = `uploads/${uid}/${id}_${file.name}`;
-  const sRef = storageRef(storage, path);
-  await uploadBytes(sRef, file);
-  const url = await getDownloadURL(sRef);
-  await addDoc(collection(db, 'tierlist_items'), {
-    filename: file.name,
-    storagePath: path,
-    downloadUrl: url,
-    createdAt: serverTimestamp(),
-    tier: null,
-    order: null,
-  });
+export interface TierlistRecord {
+  id: string;
+  filename: string;
+  downloadUrl: string;
+  tier: string | null;
+  order?: number | null;
+  entry: TierlistEntry;
 }
 
-export function listenToItems(cb: (items: any[]) => void) {
-  const q = query(collection(db, 'tierlist_items'), orderBy('createdAt', 'asc'));
-  return onSnapshot(q, (snap) => {
-    const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-    cb(items);
-  });
+export async function getItems(): Promise<TierlistRecord[]> {
+  const entries = await apiClient.getEntries();
+  return entries.map((entry) => ({
+    id: entry.id,
+    filename: entry.name,
+    downloadUrl: entry.imageUri,
+    tier: entry.tierId ?? null,
+    order: entry.position ?? null,
+    entry,
+  }));
 }
 
-export async function updateItemTier(id: string, tier: string | null, order: number | null) {
-  const refDoc = doc(db, 'tierlist_items', id);
-  await updateDoc(refDoc, { tier, order });
+export async function uploadImage(file: File): Promise<void> {
+  await apiClient.addEntry({ data: file, fileName: file.name });
 }
 
-export async function updateManyItemTiers(
-  updates: { id: string; tier: string | null; order: number }[]
-) {
-  const batch = writeBatch(db);
-  updates.forEach(({ id, tier, order }) => {
-    const refDoc = doc(db, 'tierlist_items', id);
-    batch.update(refDoc, { tier, order });
-  });
-  await batch.commit();
+export async function updateManyItemTiers(updates: TierlistEntry[]): Promise<void> {
+  await apiClient.updateEntries(new UpdateTierlistEntriesRequest({ updates }));
+}
+
+export async function removeItem(id: string): Promise<void> {
+  await apiClient.removeEntry(id);
 }
