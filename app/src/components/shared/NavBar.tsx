@@ -1,21 +1,10 @@
 import React from 'react';
 import { AppBar, Toolbar, Button, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../AuthContext';
-import { tierlistItemsQueryOptions } from '../../services/useTierlistItems';
-import { wheelOptionsQueryOptions } from '../../services/useWheelOptions';
 
 export default function NavBar() {
   const { logout } = useAuth();
-  const queryClient = useQueryClient();
-
-  const prefetchTierlist = () => {
-    void queryClient.prefetchQuery(tierlistItemsQueryOptions());
-  };
-  const prefetchWheel = () => {
-    void queryClient.prefetchQuery(wheelOptionsQueryOptions());
-  };
 
   return (
     <AppBar position="static" color="default" sx={{ mb: 2 }}>
@@ -24,23 +13,11 @@ export default function NavBar() {
           Beer Tierlist
         </Typography>
 
-        <Button
-          color="inherit"
-          component={Link}
-          to="/"
-          onMouseEnter={prefetchTierlist}
-          onFocus={prefetchTierlist}
-        >
+        <Button color="inherit" component={Link} to="/">
           Tierlist
         </Button>
 
-        <Button
-          color="inherit"
-          component={Link}
-          to="/wheel"
-          onMouseEnter={prefetchWheel}
-          onFocus={prefetchWheel}
-        >
+        <Button color="inherit" component={Link} to="/wheel">
           Spin Wheel
         </Button>
 
