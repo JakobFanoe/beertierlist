@@ -20,9 +20,10 @@ export default function TrashDropZone() {
             justifyContent: 'center',
             gap: 1.5,
             borderStyle: 'dashed',
-            borderColor: snapshot.isDraggingOver ? '#ef5350' : '#777',
-            bgcolor: snapshot.isDraggingOver ? 'rgba(211, 47, 47, 0.2)' : '#1f1c1c',
-            color: snapshot.isDraggingOver ? '#ff8a80' : '#ddd',
+            borderColor: snapshot.isDraggingOver ? 'error.main' : 'divider',
+            bgcolor: snapshot.isDraggingOver ? 'rgba(244, 67, 54, 0.14)' : 'background.default',
+            color: snapshot.isDraggingOver ? 'error.light' : 'text.secondary',
+            borderRadius: 2,
             transition: 'background-color 150ms ease, border-color 150ms ease',
           }}
         >

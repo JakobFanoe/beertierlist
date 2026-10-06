@@ -15,8 +15,9 @@ export default function TierRow({ tier, items, perRow }: TierRowProps) {
       sx={{
         display: 'flex',
         flexDirection: 'row',
-        borderBottom: '1px solid #000',
-        mb: 1,
+        borderBottom: 1,
+        borderColor: 'divider',
+        mb: 0.75,
       }}
     >
       <Box
@@ -30,11 +31,11 @@ export default function TierRow({ tier, items, perRow }: TierRowProps) {
           flexShrink: 0,
         }}
       >
-        <Typography sx={{ fontSize: 38, fontWeight: 500, color: '#222', userSelect: 'none' }}>
+        <Typography sx={{ fontSize: 38, fontWeight: 700, color: '#222', userSelect: 'none' }}>
           {tier.label}
         </Typography>
       </Box>
-      <Box sx={{ flex: 1, bgcolor: '#11110f', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
         <TierItemRows tierId={tier.label} items={items} perRow={perRow} />
       </Box>
     </Box>

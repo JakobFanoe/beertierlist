@@ -46,13 +46,10 @@ export default function SpinWheelPage() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          px: 3,
-          py: 4,
+          px: { xs: 2, sm: 3 },
+          py: { xs: 3, md: 5 },
         }}
       >
-        <Typography variant="h5" fontWeight={500} mb={4} alignSelf="flex-start">
-          Spin Wheel
-        </Typography>
         <Box sx={{ width: '100%', maxWidth: 1100 }}>
           {isFetching && !isLoading && <LinearProgress aria-label="Refreshing wheel options" />}
           {isLoading ? (
@@ -67,10 +64,10 @@ export default function SpinWheelPage() {
           ) : (
             <Stack
               direction="row"
-              spacing={5}
+              spacing={{ xs: 3, md: 5 }}
               alignItems="flex-start"
               justifyContent="center"
-              sx={{ width: '100%' }}
+              sx={{ width: '100%', alignItems: { xs: 'center', md: 'flex-start' } }}
               flexWrap="wrap"
             >
               <WheelCanvas

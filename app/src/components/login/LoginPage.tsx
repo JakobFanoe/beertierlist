@@ -42,18 +42,47 @@ export default function Login() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'linear-gradient(180deg,#1f1c1c,#111)' }}>
-      <Card sx={{ width: 420, p: 2, borderRadius: 3, boxShadow: 6 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+        py: 4,
+        background: 'radial-gradient(ellipse at top, #24211d 0%, #101214 62%)',
+      }}
+    >
+      <Card
+        sx={{
+          width: 'min(420px, 100%)',
+          p: { xs: 1, sm: 2 },
+          borderRadius: 3,
+          boxShadow: '0 24px 72px rgba(0, 0, 0, 0.42)',
+        }}
+      >
         <CardContent>
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
+          <Typography variant="h5" sx={{ mb: 1 }}>
             {isSignup ? 'Create account' : 'Sign in'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {isSignup
+              ? 'Create your account to start organizing your beers.'
+              : 'Sign in to continue to your beer tier lists.'}
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {sessionError && <Alert severity="warning" sx={{ mb: 2 }}>{sessionError}</Alert>}
-            <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth required inputProps={{ minLength: 3, maxLength: 256 }} />
+            <TextField
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              fullWidth
+              required
+              inputProps={{ minLength: 3, maxLength: 256 }}
+            />
             <TextField
               label="Password"
               type="password"
@@ -73,7 +102,7 @@ export default function Login() {
               }
             />
 
-            <Button type="submit" variant="contained" disabled={loading} sx={{ bgcolor: '#1976d2' }}>
+            <Button type="submit" variant="contained" disabled={loading} size="large">
               {isSignup ? 'Sign up' : 'Sign in'}
             </Button>
 

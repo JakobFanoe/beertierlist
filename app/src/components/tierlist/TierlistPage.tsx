@@ -36,8 +36,8 @@ export default function TierlistPage() {
         aria-live="polite"
         sx={{
           minHeight: '100vh',
-          bgcolor: '#221f21',
-          color: 'white',
+          bgcolor: 'background.default',
+          color: 'text.primary',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -55,9 +55,9 @@ export default function TierlistPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#221f21',
-        px: 4,
-        py: 8,
+        bgcolor: 'background.default',
+        px: { xs: 1.5, sm: 3, lg: 4 },
+        py: { xs: 3, md: 6 },
         display: 'flex',
         justifyContent: 'center',
       }}
@@ -71,11 +71,14 @@ export default function TierlistPage() {
             elevation={0}
             sx={{
               overflow: 'hidden',
-              bgcolor: 'transparent',
-              border: '1px solid #000',
-              p: 2,
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: { xs: 1, sm: 2 },
               display: 'flex',
               flexDirection: 'column',
+              gap: 0.5,
             }}
           >
             <DragDropContext onDragEnd={onDragEnd}>

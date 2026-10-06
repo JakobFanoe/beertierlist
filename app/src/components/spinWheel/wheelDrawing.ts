@@ -40,15 +40,15 @@ function truncate(text: string, max: number): string {
 function drawHub(ctx: CanvasRenderingContext2D): void {
   ctx.beginPath();
   ctx.arc(CENTER, CENTER, 28, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#242a30';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
   ctx.beginPath();
   ctx.arc(CENTER, CENTER, 11, 0, Math.PI * 2);
-  ctx.fillStyle = '#bdbdbd';
+  ctx.fillStyle = '#ffb74d';
   ctx.fill();
 }
 
@@ -60,11 +60,11 @@ export function drawWheel(
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
   if (entries.length === 0) {
-    ctx.fillStyle = '#e0e0e0';
+    ctx.fillStyle = '#242a30';
     ctx.beginPath();
     ctx.arc(CENTER, CENTER, RADIUS, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#9e9e9e';
+    ctx.fillStyle = '#c5cdd2';
     ctx.font = '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -86,7 +86,7 @@ export function drawWheel(
     ctx.closePath();
     ctx.fillStyle = WHEEL_COLORS[index % WHEEL_COLORS.length];
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 

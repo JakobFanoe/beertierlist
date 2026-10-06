@@ -25,12 +25,17 @@ export default function OptionManager({
   return (
     <Box
       sx={{
-        width: 340,
+        width: { xs: '100%', sm: 340 },
+        maxWidth: 400,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-        pt: 1,
+        p: { xs: 2, sm: 2.5 },
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 3,
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center">
@@ -66,7 +71,7 @@ export default function OptionManager({
             size="small"
             variant="outlined"
             onClick={() => void onAddOption(newOption)}
-            sx={{ textTransform: 'none', fontSize: 12 }}
+            sx={{ fontSize: 12 }}
           >
             Add
           </Button>
@@ -76,7 +81,6 @@ export default function OptionManager({
             size="small"
             startIcon={<DeleteIcon fontSize="small" />}
             onClick={() => void onRemoveOption(newOption)}
-            sx={{ textTransform: 'none' }}
           >
             Remove
           </Button>
@@ -84,7 +88,7 @@ export default function OptionManager({
             size="small"
             variant="outlined"
             onClick={onOpenImport}
-            sx={{ textTransform: 'none', fontSize: 12 }}
+            sx={{ fontSize: 12 }}
           >
             Import list
           </Button>

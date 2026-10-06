@@ -37,6 +37,7 @@ export default function WheelCanvas({
             borderRadius: '50%',
             display: 'block',
             cursor: spinning ? 'default' : 'pointer',
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.38)',
           }}
           onClick={onSpin}
         />
@@ -47,15 +48,11 @@ export default function WheelCanvas({
         disabled={spinning || entries.length < 2}
         onClick={onSpin}
         sx={{
-          borderRadius: 8,
-          px: 6,
+          borderRadius: 10,
+          px: 7,
           py: 1.5,
-          bgcolor: '#3369e8',
-          '&:hover': { bgcolor: '#2557d6' },
-          '&:disabled': { bgcolor: '#bdbdbd' },
           fontSize: 18,
-          fontWeight: 500,
-          textTransform: 'none',
+          fontWeight: 700,
         }}
       >
         {spinning ? 'Spinning…' : 'Spin'}

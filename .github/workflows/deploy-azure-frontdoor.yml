@@ -1,0 +1,104 @@
+name: Deploy frontend to Azure Front Door
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-azure-frontdoor
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Validate deployment configuration
+        env:
+          REACT_APP_API_BASE_URL: ${{ vars.REACT_APP_API_BASE_URL }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_STORAGE_ACCOUNT: ${{ vars.AZURE_STORAGE_ACCOUNT }}
+          AZURE_FRONTDOOR_RESOURCE_GROUP: ${{ vars.AZURE_FRONTDOOR_RESOURCE_GROUP }}
+          AZURE_FRONTDOOR_PROFILE: ${{ vars.AZURE_FRONTDOOR_PROFILE }}
+          AZURE_FRONTDOOR_ENDPOINT: ${{ vars.AZURE_FRONTDOOR_ENDPOINT }}
+        run: |
+          required_vars=(
+            REACT_APP_API_BASE_URL
+            AZURE_CLIENT_ID
+            AZURE_TENANT_ID
+            AZURE_SUBSCRIPTION_ID
+            AZURE_STORAGE_ACCOUNT
+            AZURE_FRONTDOOR_RESOURCE_GROUP
+            AZURE_FRONTDOOR_PROFILE
+            AZURE_FRONTDOOR_ENDPOINT
+          )
+
+          for name in "${required_vars[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::The GitHub Actions variable $name must be configured."
+              exit 1
+            fi
+          done
+
+          if [[ "$REACT_APP_API_BASE_URL" != https://* ]]; then
+            echo "::error::REACT_APP_API_BASE_URL must use HTTPS."
+            exit 1
+          fi
+
+      - name: Build frontend
+        working-directory: app
+        env:
+          REACT_APP_API_BASE_URL: ${{ vars.REACT_APP_API_BASE_URL }}
+        run: npm run build
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Upload static website files
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ vars.AZURE_STORAGE_ACCOUNT }}
+        run: |
+          az storage blob upload-batch \
+            --account-name "$AZURE_STORAGE_ACCOUNT" \
+            --destination '$web' \
+            --source app/build \
+            --auth-mode login \
+            --overwrite \
+            --only-show-errors
+
+      - name: Purge Front Door cache
+        env:
+          AZURE_FRONTDOOR_RESOURCE_GROUP: ${{ vars.AZURE_FRONTDOOR_RESOURCE_GROUP }}
+          AZURE_FRONTDOOR_PROFILE: ${{ vars.AZURE_FRONTDOOR_PROFILE }}
+          AZURE_FRONTDOOR_ENDPOINT: ${{ vars.AZURE_FRONTDOOR_ENDPOINT }}
+        run: |
+          az afd endpoint purge \
+            --resource-group "$AZURE_FRONTDOOR_RESOURCE_GROUP" \
+            --profile-name "$AZURE_FRONTDOOR_PROFILE" \
+            --endpoint-name "$AZURE_FRONTDOOR_ENDPOINT" \
+            --content-paths '/*' \
+            --only-show-errors

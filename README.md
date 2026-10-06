@@ -23,6 +23,32 @@ In a separate terminal, run the frontend from `app` with `npm start`. Production
 
 For deployment, provide `Cors__AllowedOrigins__0`, `Jwt__Issuer`, `Jwt__Audience`, `Jwt__Key`, `ConnectionStrings__Database`, and `ConnectionStrings__Blobstorage` through environment variables or your secret/configuration store; configure `REACT_APP_API_BASE_URL` at frontend build time. Add more CORS origins using subsequent indexes. At least one origin is required, and no local CORS, JWT, database, or storage fallback is used outside Development.
 
+## Frontend deployment with Azure Front Door
+
+The GitHub Actions workflow `.github/workflows/deploy-azure-frontdoor.yml` builds the frontend and deploys `app/build` to the `$web` container of an existing Azure Storage static website. It runs on pushes to `main` and purges the configured Azure Front Door Standard/Premium endpoint after upload. It does not provision Azure resources or deploy the backend API.
+
+Before enabling the workflow:
+
+1. Create an Azure Storage account with static website hosting enabled. Configure `index.html` as the index document and `index.html` as the error document so direct navigation to React Router paths can load the SPA.
+2. Configure an existing Front Door profile and endpoint with the Storage static website as its origin. Choose cache behavior so a deployment cannot leave stale `index.html` content; the workflow purges `/*` after each upload.
+3. Create an Azure identity with a federated credential for this repository's `main` branch (`repo:JakobFanoe/beertierlist:ref:refs/heads/main`, issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`). Grant it permission to upload blobs to the storage account's static website container and permission to purge the Front Door endpoint, scoped to the relevant resources.
+4. Add these **Actions variables** to the repository (Settings → Secrets and variables → Actions → Variables):
+
+   | Variable | Value |
+   | --- | --- |
+   | `REACT_APP_API_BASE_URL` | HTTPS base URL of the deployed API |
+   | `AZURE_CLIENT_ID` | Client ID of the federated Azure identity |
+   | `AZURE_TENANT_ID` | Azure tenant ID |
+   | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+   | `AZURE_STORAGE_ACCOUNT` | Storage account name hosting the static website |
+   | `AZURE_FRONTDOOR_RESOURCE_GROUP` | Resource group containing the Front Door profile |
+   | `AZURE_FRONTDOOR_PROFILE` | Front Door profile name |
+   | `AZURE_FRONTDOOR_ENDPOINT` | Front Door endpoint name |
+
+5. Add the public Front Door site origin to the API's `Cors__AllowedOrigins__0` configuration. The API must be reachable over HTTPS.
+
+After configuration, each push to `main` installs dependencies, builds with the configured API URL, uploads the static files, then purges Front Door's cache. The API URL is embedded in the frontend bundle at build time; changing it requires another successful deployment.
+
 After adding the connection strings, apply the migrations from the backend repository root:
 
 ```powershell

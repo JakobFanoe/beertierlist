@@ -39,14 +39,15 @@ export default function UploadTray({ items, perRow }: UploadTrayProps) {
   return (
     <>
       <Box sx={{ mt: 4 }}>
-        <Typography sx={{ fontSize: 18, color: '#ddd', fontWeight: 700, mb: 2 }}>
+        <Typography sx={{ fontSize: 18, color: 'text.primary', fontWeight: 700, mb: 2 }}>
           Upload images
         </Typography>
         <Paper
           variant="outlined"
           sx={{
-            bgcolor: '#1f1c1c',
-            borderColor: '#555',
+            bgcolor: 'background.paper',
+            borderColor: 'divider',
+            borderRadius: 2,
             minHeight: 140,
             px: 2,
             py: 1,
@@ -62,10 +63,6 @@ export default function UploadTray({ items, perRow }: UploadTrayProps) {
             disabled={uploadMutation.isPending}
             sx={{
               alignSelf: 'flex-start',
-              bgcolor: '#fff',
-              color: '#000',
-              boxShadow: 'none',
-              '&:hover': { bgcolor: '#eee', boxShadow: 'none' },
             }}
           >
             {uploadMutation.isPending ? 'Uploading...' : 'Choose files'}

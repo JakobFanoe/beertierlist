@@ -41,9 +41,10 @@ export default function ImportOptionsModal({
             transform: 'translate(-50%, -50%)',
             bgcolor: 'background.paper',
             borderRadius: 3,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
-            p: 4,
-            minWidth: 400,
+            boxShadow: '0 24px 72px rgba(0,0,0,0.48)',
+            p: { xs: 2.5, sm: 4 },
+            width: { xs: 'calc(100vw - 32px)', sm: 440 },
+            maxWidth: 'calc(100vw - 32px)',
             outline: 'none',
             display: 'flex',
             flexDirection: 'column',
@@ -70,7 +71,7 @@ export default function ImportOptionsModal({
             {names.length} entries detected
           </Typography>
           <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-            <Button variant="outlined" size="small" onClick={handleClose} sx={{ textTransform: 'none' }}>
+            <Button variant="outlined" size="small" onClick={handleClose}>
               Cancel
             </Button>
             <Button
@@ -78,11 +79,6 @@ export default function ImportOptionsModal({
               size="small"
               disabled={!importText.trim()}
               onClick={() => void handleImport()}
-              sx={{
-                bgcolor: '#3369e8',
-                '&:hover': { bgcolor: '#2557d6' },
-                textTransform: 'none',
-              }}
             >
               Import
             </Button>

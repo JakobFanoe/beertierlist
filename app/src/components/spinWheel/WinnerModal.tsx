@@ -42,10 +42,11 @@ export default function WinnerModal({
             transform: 'translate(-50%, -50%)',
             bgcolor: 'background.paper',
             borderRadius: 3,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+            boxShadow: '0 24px 72px rgba(0,0,0,0.48)',
             p: 4,
             textAlign: 'center',
-            minWidth: 280,
+            width: { xs: 'calc(100vw - 32px)', sm: 360 },
+            maxWidth: 'calc(100vw - 32px)',
             outline: 'none',
           }}
         >
@@ -85,7 +86,6 @@ export default function WinnerModal({
               variant="contained"
               size="small"
               onClick={onClose}
-              sx={{ bgcolor: '#3369e8', '&:hover': { bgcolor: '#2557d6' } }}
             >
               Done
             </Button>
