@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TierlistEntry } from './api/generatedClient';
-import { getItems, TierlistRecord, updateManyItemTiers, uploadImage } from './tierlistService';
+import {
+  getItems,
+  removeItem,
+  TierlistRecord,
+  updateManyItemTiers,
+  uploadImage,
+} from './tierlistService';
 
 export const TIERLIST_ITEMS_QUERY_KEY = ['tierlist', 'entries'];
 
@@ -18,6 +24,14 @@ export function useUploadTierlistImage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: uploadImage,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TIERLIST_ITEMS_QUERY_KEY }),
+  });
+}
+
+export function useRemoveTierlistItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: removeItem,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TIERLIST_ITEMS_QUERY_KEY }),
   });
 }
