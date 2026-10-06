@@ -1,0 +1,108 @@
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  LinearProgress,
+  Paper,
+  Typography,
+} from '@mui/material';
+import { DragDropContext } from '@hello-pangea/dnd';
+import RemoveTierlistEntryDialog from './RemoveTierlistEntryDialog';
+import TierRow from './TierRow';
+import TrashDropZone from './TrashDropZone';
+import UploadTray from './UploadTray';
+import useTierlistData from './useTierlistData';
+import useTierlistDragDrop from './useTierlistDragDrop';
+import useTierlistLayout from './useTierlistLayout';
+import { TIERS } from './tierlistUtils';
+
+export default function TierlistPage() {
+  const { lists, isLoading, isFetching, error: loadError } = useTierlistData();
+  const { containerRef, perRow } = useTierlistLayout();
+  const {
+    onDragEnd,
+    error: updateError,
+    itemToRemove,
+    confirmRemove,
+    cancelRemove,
+    removeError,
+    isRemoving,
+  } = useTierlistDragDrop(lists, perRow);
+
+  if (isLoading) {
+    return (
+      <Box
+        role="status"
+        aria-live="polite"
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          color: 'text.primary',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+        }}
+      >
+        <CircularProgress aria-label="Loading tierlist" />
+        <Typography>Loading tierlist...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        px: { xs: 1.5, sm: 3, lg: 4 },
+        py: { xs: 3, md: 6 },
+        display: 'flex',
+        justifyContent: 'center',
+      }}
+    >
+      <Box sx={{ width: '100%', maxWidth: 1600 }}>
+        {isFetching && <LinearProgress aria-label="Refreshing tierlist" />}
+        {loadError instanceof Error && <Alert severity="error">{loadError.message}</Alert>}
+        {updateError instanceof Error && <Alert severity="error">{updateError.message}</Alert>}
+        <Box ref={containerRef}>
+          <Paper
+            elevation={0}
+            sx={{
+              overflow: 'hidden',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: { xs: 1, sm: 2 },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+            }}
+          >
+            <DragDropContext onDragEnd={onDragEnd}>
+              {TIERS.map((tier) => (
+                <TierRow
+                  key={tier.label}
+                  tier={tier}
+                  items={lists[tier.label]}
+                  perRow={perRow}
+                />
+              ))}
+              <UploadTray items={lists.tray} perRow={perRow} />
+              <TrashDropZone />
+            </DragDropContext>
+          </Paper>
+        </Box>
+      </Box>
+      <RemoveTierlistEntryDialog
+        item={itemToRemove}
+        error={removeError}
+        isRemoving={isRemoving}
+        onCancel={cancelRemove}
+        onConfirm={confirmRemove}
+      />
+    </Box>
+  );
+}
