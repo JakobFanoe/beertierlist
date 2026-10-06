@@ -1,7 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { DropResult } from '@hello-pangea/dnd';
-import { useUpdateTierlistItems } from '../../services/useTierlistItems';
-import { TierLists } from './tierlistTypes';
+import {
+  useRemoveTierlistItem,
+  useUpdateTierlistItems,
+} from '../../services/useTierlistItems';
+import { TierItem, TierLists } from './tierlistTypes';
 
 interface DropLocation {
   tier: string;
@@ -15,17 +18,28 @@ function parseDropLocation(id: string): DropLocation {
 
 export default function useTierlistDragDrop(lists: TierLists, perRow: number) {
   const updateItems = useUpdateTierlistItems();
+  const removeItem = useRemoveTierlistItem();
+  const [itemToRemove, setItemToRemove] = useState<TierItem | null>(null);
 
   const onDragEnd = useCallback(
     ({ source, destination }: DropResult) => {
       if (!destination) return;
 
       const sourceLocation = parseDropLocation(source.droppableId);
+      const sourceIndex = sourceLocation.row * perRow + source.index;
+      if (destination.droppableId === 'trash') {
+        const item = lists[sourceLocation.tier]?.[sourceIndex];
+        if (item) {
+          removeItem.reset();
+          setItemToRemove(item);
+        }
+        return;
+      }
+
       const destinationLocation = parseDropLocation(destination.droppableId);
       const sourceTier = sourceLocation.tier;
       const destinationTier = destinationLocation.tier;
       const sourceFlat = lists[sourceTier].slice();
-      const sourceIndex = sourceLocation.row * perRow + source.index;
       const destinationIndex = destinationLocation.row * perRow + destination.index;
       const [moved] = sourceFlat.splice(sourceIndex, 1);
       if (!moved) return;
@@ -50,8 +64,27 @@ export default function useTierlistDragDrop(lists: TierLists, perRow: number) {
       ];
       updateItems.mutate(updates);
     },
-    [lists, perRow, updateItems],
+    [lists, perRow, removeItem, updateItems],
   );
 
-  return { onDragEnd, error: updateItems.error };
+  const confirmRemove = useCallback(() => {
+    if (!itemToRemove) return;
+    removeItem.mutate(itemToRemove.id, {
+      onSuccess: () => setItemToRemove(null),
+    });
+  }, [itemToRemove, removeItem]);
+
+  const cancelRemove = useCallback(() => {
+    if (!removeItem.isPending) setItemToRemove(null);
+  }, [removeItem.isPending]);
+
+  return {
+    onDragEnd,
+    error: updateItems.error,
+    itemToRemove,
+    confirmRemove,
+    cancelRemove,
+    removeError: removeItem.error,
+    isRemoving: removeItem.isPending,
+  };
 }

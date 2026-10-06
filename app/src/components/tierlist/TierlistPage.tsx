@@ -1,6 +1,15 @@
-import { Alert, Box, CircularProgress, LinearProgress, Paper, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  LinearProgress,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { DragDropContext } from '@hello-pangea/dnd';
+import RemoveTierlistEntryDialog from './RemoveTierlistEntryDialog';
 import TierRow from './TierRow';
+import TrashDropZone from './TrashDropZone';
 import UploadTray from './UploadTray';
 import useTierlistData from './useTierlistData';
 import useTierlistDragDrop from './useTierlistDragDrop';
@@ -10,7 +19,15 @@ import { TIERS } from './tierlistUtils';
 export default function TierlistPage() {
   const { lists, isLoading, isFetching, error: loadError } = useTierlistData();
   const { containerRef, perRow } = useTierlistLayout();
-  const { onDragEnd, error: updateError } = useTierlistDragDrop(lists, perRow);
+  const {
+    onDragEnd,
+    error: updateError,
+    itemToRemove,
+    confirmRemove,
+    cancelRemove,
+    removeError,
+    isRemoving,
+  } = useTierlistDragDrop(lists, perRow);
 
   if (isLoading) {
     return (
@@ -71,10 +88,18 @@ export default function TierlistPage() {
                 />
               ))}
               <UploadTray items={lists.tray} perRow={perRow} />
+              <TrashDropZone />
             </DragDropContext>
           </Paper>
         </Box>
       </Box>
+      <RemoveTierlistEntryDialog
+        item={itemToRemove}
+        error={removeError}
+        isRemoving={isRemoving}
+        onCancel={cancelRemove}
+        onConfirm={confirmRemove}
+      />
     </Box>
   );
 }
